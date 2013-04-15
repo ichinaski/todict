@@ -74,7 +74,7 @@ public class DataProvider extends ContentProvider{
                     + WordColumns.WORD + " TEXT NOT NULL," 
                     + WordColumns.TRANSLATION + " TEXT NOT NULL)");
             
-            db.execSQL("CREATE INDEX translation_word_idx ON "
+            db.execSQL("CREATE INDEX word_word_idx ON "
                     + Tables.WORD + "(" + WordColumns.WORD + ")" );
             
             /*
