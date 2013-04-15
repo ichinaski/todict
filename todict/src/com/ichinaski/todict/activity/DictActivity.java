@@ -47,7 +47,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     private String mDictName;
     
     private static final int DICT_LOADER = 0;
-    private static final int TRANSLATION_LOADER = 1;
+    private static final int WORD_LOADER = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +56,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         
         mListView = (ListView)findViewById(android.R.id.list);
         
-        mAdapter = new TranslationAdapter(this);
+        mAdapter = new WordAdapter(this);
         mListView.setAdapter(mAdapter);
         mListView.setOnItemClickListener(this);
         mListView.setOnLongClickListener(this);
@@ -77,8 +77,8 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     protected void onNewIntent(Intent intent) {
         setIntent(intent);
         if (Intent.ACTION_VIEW.equals(intent.getAction())) {
-	        long translationID = Long.parseLong(intent.getDataString());
-	        startTranslationActivity(translationID);
+	        long wordID = Long.parseLong(intent.getDataString());
+	        startWordActivity(wordID);
         }
     }
     
@@ -116,14 +116,14 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         mDictID = dict.getID();
         mDictName = dict.getName();
         Prefs.setDefaultDict(this, mDictID);
-        getSupportLoaderManager().restartLoader(TRANSLATION_LOADER, null, this);
+        getSupportLoaderManager().restartLoader(WORD_LOADER, null, this);
         return true;
     }
     
     private void init() {
         if (mDictID != Prefs.DICT_NONE) {
 	        getSupportLoaderManager().restartLoader(DICT_LOADER, null, this);
-	        getSupportLoaderManager().restartLoader(TRANSLATION_LOADER, null, this);
+	        getSupportLoaderManager().restartLoader(WORD_LOADER, null, this);
         } else {
             Intent intent = new Intent(this, NewDictActivity.class);
             startActivityForResult(intent, REQUEST_ADD_DICT);
@@ -142,8 +142,8 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
             case R.id.search:
                 onSearchRequested();
                 return true;
-            case R.id.add_translation:
-                startTranslationActivity(WordActivity.ID_NONE);
+            case R.id.add_word:
+                startWordActivity(WordActivity.ID_NONE);
                 return true;
             case R.id.add_dict:
 	            Intent newDictIntent = new Intent(this, NewDictActivity.class);
@@ -160,9 +160,9 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
             case DICT_LOADER:
 		        return new CursorLoader(this, DataProviderContract.Dict.CONTENT_URI,
 		                DictQuery.PROJECTION, null, null, null);
-            case TRANSLATION_LOADER:
+            case WORD_LOADER:
 		        return new CursorLoader(this, Word.CONTENT_URI,
-		                TranslationQuery.PROJECTION, 
+		                WordQuery.PROJECTION, 
 		                WordColumns.DICT_ID + " = ?",
 		                new String[]{String.valueOf(mDictID)},
 		                WordColumns.WORD);
@@ -183,7 +183,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 }
                 setupNavigationMode(dicts);
                 break;
-            case TRANSLATION_LOADER:
+            case WORD_LOADER:
 		        mAdapter.changeCursor(cursor);
                 break;
         }
@@ -191,33 +191,30 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        if (loader.getId() == TRANSLATION_LOADER) {
+        if (loader.getId() == WORD_LOADER) {
 	        mAdapter.changeCursor(null);
         }
     }
     
-    class TranslationAdapter extends CursorAdapter {
+    class WordAdapter extends CursorAdapter {
         
-        public TranslationAdapter(Context context) {
+        public WordAdapter(Context context) {
             super(context, null, false);
         }
 
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
-            //TextView word = (TextView)view.findViewById(R.id.word);
-            //TextView translation = (TextView)view.findViewById(R.id.translation);
             TextView word = (TextView)view.findViewById(android.R.id.text1);
             TextView translation = (TextView)view.findViewById(android.R.id.text2);
             
-            word.setText(cursor.getString(TranslationQuery.WORD));
-            translation.setText(cursor.getString(TranslationQuery.TRANSLATION));
-            view.setTag(cursor.getLong(TranslationQuery._ID));
+            word.setText(cursor.getString(WordQuery.WORD));
+            translation.setText(cursor.getString(WordQuery.TRANSLATION));
+            view.setTag(cursor.getLong(WordQuery._ID));
         }
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup viewGroup) {
             LayoutInflater inflater = LayoutInflater.from(context);
-            //return inflater.inflate(R.layout.translation_row, null);
             return inflater.inflate(android.R.layout.simple_list_item_2, null);
         }
         
@@ -225,7 +222,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        startTranslationActivity((Long)view.getTag());
+        startWordActivity((Long)view.getTag());
     }
 
     @Override
@@ -234,7 +231,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         return true;
     }
     
-    private void startTranslationActivity(long id) {
+    private void startWordActivity(long id) {
         Intent intent = new Intent(this, WordActivity.class);
         Bundle extras = new Bundle();
         extras.putLong(Extra.WORD_ID, id);
@@ -254,7 +251,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         int NAME = 1;
     }
 
-    interface TranslationQuery {
+    interface WordQuery {
         String[] PROJECTION = {
 		        DataProviderContract.WordColumns._ID,
 		        DataProviderContract.WordColumns.WORD,
