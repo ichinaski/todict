@@ -11,20 +11,19 @@ public class DataProviderContract {
 
     interface Tables {
         String DICTIONARY = "dictionary";
-        String TRANSLATION = "translation";
+        String WORD = "word";
     }
 
     public interface DictColumns {
         String _ID = BaseColumns._ID;
-        String LANG_1 = "lang_1";// language 1
-        String LANG_2 = "lang_2";// language 2
+        String NAME = "name";
     }
 
-    public interface TranslationColumns {
+    public interface WordColumns {
         String _ID = BaseColumns._ID;
         String DICT_ID = "dict_id";
-        String WORD = "word";// language 1
-        String TRANSLATION = "translation";// language 2
+        String WORD = "word";
+        String TRANSLATION = "translation";
         // String NOTES = "notes";
         // String DATE = "date";
     }
@@ -39,14 +38,14 @@ public class DataProviderContract {
                 + "/" + Tables.DICTIONARY;
     }
 
-    public static class Translation {
+    public static class Word {
         public static final Uri CONTENT_URI = 
-		        Uri.withAppendedPath(BASE_CONTENT_URI, Tables.TRANSLATION);
+		        Uri.withAppendedPath(BASE_CONTENT_URI, Tables.WORD);
 
         public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE 
-                + "/" + Tables.TRANSLATION;
+                + "/" + Tables.WORD;
         public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE
-                + "/" + Tables.TRANSLATION;
+                + "/" + Tables.WORD;
     }
 
     // The content provider database name

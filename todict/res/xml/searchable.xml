@@ -4,4 +4,4 @@
     android:label="@string/search_name"
     android:searchSuggestAuthority="com.ichinaski.todict"
     android:searchSuggestSelection="word LIKE ?"
-    android:searchSuggestIntentAction="android.Intent.action.VIEW" /><!-- TODO: Full Text Search -->
+    android:searchSuggestIntentAction="android.intent.action.VIEW" /><!-- TODO: Full Text Search -->

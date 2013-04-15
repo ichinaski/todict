@@ -12,7 +12,7 @@
         android:icon="@drawable/ic_menu_add"
         android:orderInCategory="100"
         android:showAsAction="always"
-        android:title="@string/new_translation"/>
+        android:title="@string/new_word"/>
 
     <item
         android:id="@+id/add_dict"

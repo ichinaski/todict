@@ -29,8 +29,8 @@ import com.actionbarsherlock.view.MenuItem;
 import com.ichinaski.todict.R;
 import com.ichinaski.todict.dao.Dict;
 import com.ichinaski.todict.provider.DataProviderContract;
-import com.ichinaski.todict.provider.DataProviderContract.Translation;
-import com.ichinaski.todict.provider.DataProviderContract.TranslationColumns;
+import com.ichinaski.todict.provider.DataProviderContract.Word;
+import com.ichinaski.todict.provider.DataProviderContract.WordColumns;
 import com.ichinaski.todict.util.Extra;
 import com.ichinaski.todict.util.Prefs;
 
@@ -44,8 +44,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     
     private List<Dict> mDicts;
     private long mDictID;
-    private String mLanguage1;
-    private String mLanguage2;
+    private String mDictName;
     
     private static final int DICT_LOADER = 0;
     private static final int TRANSLATION_LOADER = 1;
@@ -77,8 +76,10 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     @Override
     protected void onNewIntent(Intent intent) {
         setIntent(intent);
-        long translationID = Long.parseLong(getIntent().getDataString());
-        startTranslationActivity(translationID);
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+	        long translationID = Long.parseLong(intent.getDataString());
+	        startTranslationActivity(translationID);
+        }
     }
     
     private void setupNavigationMode(List<Dict> dicts) {
@@ -94,7 +95,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         int currentIndex = 0;
         for (int i=0; i<mDicts.size(); i++) {
             final Dict dict = mDicts.get(i);
-            names[i] = dict.toString();
+            names[i] = dict.getName();
             if (dict.getID() == mDictID) {
                 currentIndex = i;
             }
@@ -113,8 +114,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     public boolean onNavigationItemSelected(int itemPosition, long itemId) {
         final Dict dict = mDicts.get(itemPosition);
         mDictID = dict.getID();
-        mLanguage1 = dict.getLang1();
-        mLanguage2 = dict.getLang2();
+        mDictName = dict.getName();
         Prefs.setDefaultDict(this, mDictID);
         getSupportLoaderManager().restartLoader(TRANSLATION_LOADER, null, this);
         return true;
@@ -143,7 +143,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 onSearchRequested();
                 return true;
             case R.id.add_translation:
-                startTranslationActivity(TranslationActivity.ID_NONE);
+                startTranslationActivity(WordActivity.ID_NONE);
                 return true;
             case R.id.add_dict:
 	            Intent newDictIntent = new Intent(this, NewDictActivity.class);
@@ -161,11 +161,11 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 		        return new CursorLoader(this, DataProviderContract.Dict.CONTENT_URI,
 		                DictQuery.PROJECTION, null, null, null);
             case TRANSLATION_LOADER:
-		        return new CursorLoader(this, Translation.CONTENT_URI,
+		        return new CursorLoader(this, Word.CONTENT_URI,
 		                TranslationQuery.PROJECTION, 
-		                TranslationColumns.DICT_ID + " = ?",
+		                WordColumns.DICT_ID + " = ?",
 		                new String[]{String.valueOf(mDictID)},
-		                TranslationColumns.WORD);
+		                WordColumns.WORD);
         }
         return null;
     }
@@ -178,8 +178,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 while (cursor.moveToNext()) {
                     Dict dict = new Dict(
                             cursor.getLong(DictQuery._ID),
-			                cursor.getString(DictQuery.LANG1),
-			                cursor.getString(DictQuery.LANG2));
+			                cursor.getString(DictQuery.NAME));
 	                dicts.add(dict);
                 }
                 setupNavigationMode(dicts);
@@ -236,12 +235,11 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     }
     
     private void startTranslationActivity(long id) {
-        Intent intent = new Intent(this, TranslationActivity.class);
+        Intent intent = new Intent(this, WordActivity.class);
         Bundle extras = new Bundle();
-        extras.putLong(Extra.TRANSLATION_ID, id);
+        extras.putLong(Extra.WORD_ID, id);
         extras.putLong(Extra.DICT_ID, mDictID);
-        extras.putString(Extra.LANGUAGE1, mLanguage1);
-        extras.putString(Extra.LANGUAGE2, mLanguage2);
+        extras.putString(Extra.DICT_NAME, mDictName);
         intent.putExtras(extras);
         startActivity(intent);
     }
@@ -249,20 +247,18 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     interface DictQuery {
         String[] PROJECTION = {
 		        DataProviderContract.DictColumns._ID,
-		        DataProviderContract.DictColumns.LANG_1,
-		        DataProviderContract.DictColumns.LANG_2
+		        DataProviderContract.DictColumns.NAME
         };
         
         int _ID = 0;
-        int LANG1 = 1;
-        int LANG2 = 2;
+        int NAME = 1;
     }
 
     interface TranslationQuery {
         String[] PROJECTION = {
-		        DataProviderContract.TranslationColumns._ID,
-		        DataProviderContract.TranslationColumns.WORD,
-		        DataProviderContract.TranslationColumns.TRANSLATION
+		        DataProviderContract.WordColumns._ID,
+		        DataProviderContract.WordColumns.WORD,
+		        DataProviderContract.WordColumns.TRANSLATION
         };
         
         int _ID = 0;

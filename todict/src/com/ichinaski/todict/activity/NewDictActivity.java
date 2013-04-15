@@ -18,15 +18,14 @@ import com.ichinaski.todict.provider.DataProviderContract.DictColumns;
 import com.ichinaski.todict.util.Prefs;
 
 public class NewDictActivity extends SherlockFragmentActivity {
-    private EditText mLanguageInput1, mLanguageInput2;
+    private EditText mNameInput;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_dict_activity);
 
-        mLanguageInput1 = (EditText)findViewById(R.id.lang1);
-        mLanguageInput2 = (EditText)findViewById(R.id.lang2);
+        mNameInput = (EditText)findViewById(R.id.dict_name);
     }
 
     @Override
@@ -39,10 +38,9 @@ public class NewDictActivity extends SherlockFragmentActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.save_dict:
-                final String lang1 = mLanguageInput1.getText().toString();
-                final String lang2 = mLanguageInput2.getText().toString();
-                if (validateText(lang1) && validateText(lang1)) {
-                    long dictID = addDict(lang1, lang2);
+                final String name = mNameInput.getText().toString();
+                if (!TextUtils.isEmpty(name)) {
+                    long dictID = addDict(name);
                     Prefs.setDefaultDict(this, dictID);
 	                setResult(RESULT_OK);
 	                finish();
@@ -56,15 +54,10 @@ public class NewDictActivity extends SherlockFragmentActivity {
         }
     }
 
-    private boolean validateText(String text) {
-        return !TextUtils.isEmpty(text);
-    }
-
-    private long addDict(String lang1, String lang2) {
+    private long addDict(String name) {
         ContentResolver resolver = getContentResolver();
         ContentValues values = new ContentValues();
-        values.put(DictColumns.LANG_1, lang1);
-        values.put(DictColumns.LANG_2, lang2);
+        values.put(DictColumns.NAME, name);
         Uri uri = resolver.insert(Dict.CONTENT_URI, values);
         return ContentUris.parseId(uri);
     }

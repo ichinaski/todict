@@ -6,15 +6,9 @@
     android:padding="10dp" >
 
     <EditText
-        android:id="@+id/lang1"
+        android:id="@+id/dict_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/lang1" />
-
-    <EditText
-        android:id="@+id/lang2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/lang2" />
+        android:hint="@string/dict_name" />
 
 </LinearLayout>

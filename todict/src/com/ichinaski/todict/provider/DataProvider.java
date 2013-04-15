@@ -15,14 +15,14 @@ import android.util.Log;
 import com.ichinaski.todict.provider.DataProviderContract.Dict;
 import com.ichinaski.todict.provider.DataProviderContract.DictColumns;
 import com.ichinaski.todict.provider.DataProviderContract.Tables;
-import com.ichinaski.todict.provider.DataProviderContract.Translation;
-import com.ichinaski.todict.provider.DataProviderContract.TranslationColumns;
+import com.ichinaski.todict.provider.DataProviderContract.Word;
+import com.ichinaski.todict.provider.DataProviderContract.WordColumns;
 
 public class DataProvider extends ContentProvider{
     private static final String TAG = DataProvider.class.getSimpleName();
     
     private static final int DICT = 1;
-    private static final int TRANSLATION = 2;
+    private static final int WORD = 2;
     private static final int SEARCH_SUGGEST = 3;
     
     // Defines a helper object that matches content URIs to table-specific parameters
@@ -35,7 +35,7 @@ public class DataProvider extends ContentProvider{
         final String authority = DataProviderContract.AUTHORITY;
         
         matcher.addURI(authority, Tables.DICTIONARY, DICT);
-        matcher.addURI(authority, Tables.TRANSLATION, TRANSLATION);
+        matcher.addURI(authority, Tables.WORD, WORD);
         matcher.addURI(authority, SearchManager.SUGGEST_URI_PATH_QUERY, SEARCH_SUGGEST);
         
         return matcher;
@@ -57,26 +57,25 @@ public class DataProvider extends ContentProvider{
         
         private void dropTables(SQLiteDatabase db) {
             db.execSQL("DROP TABLE IF EXISTS " + Tables.DICTIONARY);
-            db.execSQL("DROP TABLE IF EXISTS " + Tables.TRANSLATION);
+            db.execSQL("DROP TABLE IF EXISTS " + Tables.WORD);
         }
 
         @Override
         public void onCreate(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE " + DataProviderContract.Tables.DICTIONARY + " ("
                     + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," 
-                    + DictColumns.LANG_1 + " TEXT NOT NULL," 
-                    + DictColumns.LANG_2 + " TEXT NOT NULL)");
+                    + DictColumns.NAME + " TEXT NOT NULL)");
             
-            db.execSQL("CREATE TABLE " + DataProviderContract.Tables.TRANSLATION + " ("
+            db.execSQL("CREATE TABLE " + DataProviderContract.Tables.WORD + " ("
                     + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," 
-                    + TranslationColumns.DICT_ID + " INTEGER NOT NULL "
+                    + WordColumns.DICT_ID + " INTEGER NOT NULL "
                     + "REFERENCES " + Tables.DICTIONARY + "(" + DictColumns._ID + ")"
                     + " ON UPDATE CASCADE ON DELETE CASCADE,"
-                    + TranslationColumns.WORD + " TEXT NOT NULL," 
-                    + TranslationColumns.TRANSLATION + " TEXT NOT NULL)");
+                    + WordColumns.WORD + " TEXT NOT NULL," 
+                    + WordColumns.TRANSLATION + " TEXT NOT NULL)");
             
             db.execSQL("CREATE INDEX translation_word_idx ON "
-                    + Tables.TRANSLATION + "(" + TranslationColumns.WORD + ")" );
+                    + Tables.WORD + "(" + WordColumns.WORD + ")" );
             
             /*
 	         // Using the "porter" tokenizer for simple stemming, so that
@@ -97,7 +96,8 @@ public class DataProvider extends ContentProvider{
         
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            Log.d(TAG, "onUpgrade() - Old version: " + oldVersion + ".New Version: " + newVersion);
+            Log.d(TAG, "onUpgrade() - Old version: " + oldVersion 
+                    + ". New Version: " + newVersion);
             dropTables(db);
             onCreate(db);
         }
@@ -123,25 +123,25 @@ public class DataProvider extends ContentProvider{
                     Tables.DICTIONARY, projection, selection, selectionArgs, 
                     null, null, sortOrder);
                 break;
-            case TRANSLATION:
+            case WORD:
                 cursor = db.query(
-                    Tables.TRANSLATION, projection, selection, selectionArgs, 
+                    Tables.WORD, projection, selection, selectionArgs, 
                     null, null, sortOrder);
                 break;
             case SEARCH_SUGGEST:
                 // Suggestions search
-	            // Adjust incoming query to become SQL text match
+                // Adjust incoming query to become SQL text match
                 selectionArgs[0] = selectionArgs[0] + "%";
                 projection = new String[] {
                         BaseColumns._ID,
                         BaseColumns._ID 
                         + " AS " + SearchManager.SUGGEST_COLUMN_INTENT_DATA,
-                        TranslationColumns.WORD 
+                        WordColumns.WORD 
                         + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1,
-                        TranslationColumns.TRANSLATION 
+                        WordColumns.TRANSLATION 
                         + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_2};
                 cursor = db.query(
-                    DataProviderContract.Tables.TRANSLATION, projection,
+                    DataProviderContract.Tables.WORD, projection,
                     selection, selectionArgs, null, null, sortOrder);
                 break;
         }
@@ -158,8 +158,8 @@ public class DataProvider extends ContentProvider{
         switch (sUriMatcher.match(uri)) {
             case DICT:
                 return Dict.CONTENT_TYPE;
-            case TRANSLATION:
-                return Translation.CONTENT_TYPE;
+            case WORD:
+                return Word.CONTENT_TYPE;
         }
         return null;
     }
@@ -172,8 +172,8 @@ public class DataProvider extends ContentProvider{
             case DICT:
                 id = db.insertOrThrow(Tables.DICTIONARY, null, values);
                 break;
-            case TRANSLATION:
-                id = db.insertOrThrow(Tables.TRANSLATION, null, values);
+            case WORD:
+                id = db.insertOrThrow(Tables.WORD, null, values);
                 break;
         }
         
@@ -193,8 +193,8 @@ public class DataProvider extends ContentProvider{
             case DICT:
                 rows = db.update(Tables.DICTIONARY, values, selection, selectionArgs);
                 break;
-            case TRANSLATION:
-                rows = db.update(Tables.TRANSLATION, values, selection, selectionArgs);
+            case WORD:
+                rows = db.update(Tables.WORD, values, selection, selectionArgs);
                 break;
         }
         
@@ -212,8 +212,8 @@ public class DataProvider extends ContentProvider{
             case DICT:
                 rows = db.delete(Tables.DICTIONARY, selection, selectionArgs);
                 break;
-            case TRANSLATION:
-                rows = db.delete(Tables.TRANSLATION, selection, selectionArgs);
+            case WORD:
+                rows = db.delete(Tables.WORD, selection, selectionArgs);
                 break;
         }
         getContext().getContentResolver().notifyChange(uri, null);

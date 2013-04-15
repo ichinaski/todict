@@ -2,29 +2,19 @@ package com.ichinaski.todict.dao;
 
 public class Dict {
     private long mID;
-    private String mLang1, mLang2;
+    private String mName;
     
-    public Dict (long id, String lang1, String lang2) {
+    public Dict (long id, String name) {
         mID = id;
-        mLang1 = lang1;
-        mLang2 = lang2;
+        mName = name;
     }
     
     public long getID() {
         return mID;
     }
     
-    public String getLang1() {
-        return mLang1;
-    }
-    
-    public String getLang2() {
-        return mLang2;
-    }
-    
-    @Override
-    public String toString() {
-        return mLang1 + " - " + mLang2;
+    public String getName() {
+        return mName;
     }
 
 }
