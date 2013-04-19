@@ -20,4 +20,10 @@
         android:showAsAction="never"
         android:title="@string/new_dict"/>
 
+    <item
+        android:id="@+id/delete_dict"
+        android:orderInCategory="102"
+        android:showAsAction="never"
+        android:title="Delete Dict"/>
+
 </menu>

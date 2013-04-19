@@ -3,10 +3,18 @@ package com.ichinaski.todict.activity;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -20,6 +28,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
@@ -28,18 +37,20 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.ichinaski.todict.R;
 import com.ichinaski.todict.dao.Dict;
+import com.ichinaski.todict.fragment.NewDictDialogFragment;
+import com.ichinaski.todict.fragment.NewDictDialogFragment.INewDictionary;
 import com.ichinaski.todict.provider.DataProviderContract;
+import com.ichinaski.todict.provider.DataProviderContract.DictColumns;
 import com.ichinaski.todict.provider.DataProviderContract.Word;
 import com.ichinaski.todict.provider.DataProviderContract.WordColumns;
 import com.ichinaski.todict.util.Extra;
 import com.ichinaski.todict.util.Prefs;
 
 public class DictActivity extends SherlockFragmentActivity implements LoaderCallbacks<Cursor>, 
-        OnNavigationListener, OnItemClickListener, OnLongClickListener {
-    public static final int REQUEST_ADD_DICT = 100;
+        OnNavigationListener, INewDictionary {
     
     private ListView mListView;
-    private CursorAdapter mAdapter;
+    private WordAdapter mAdapter;
     private ArrayAdapter<String> mNavigationAdapter;
     
     private List<Dict> mDicts;
@@ -58,19 +69,11 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         
         mAdapter = new WordAdapter(this);
         mListView.setAdapter(mAdapter);
-        mListView.setOnItemClickListener(this);
-        mListView.setOnLongClickListener(this);
+        mListView.setOnItemClickListener(mAdapter);
+        mListView.setOnLongClickListener(mAdapter);
         
         mDictID = Prefs.getDefaultDict(this);// Default to the cached value
         init();
-    }
-    
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_ADD_DICT && resultCode == RESULT_OK) {
-            mDictID = Prefs.getDefaultDict(this);
-            init();
-        }
     }
     
     @Override
@@ -125,9 +128,29 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 	        getSupportLoaderManager().restartLoader(DICT_LOADER, null, this);
 	        getSupportLoaderManager().restartLoader(WORD_LOADER, null, this);
         } else {
-            Intent intent = new Intent(this, NewDictActivity.class);
-            startActivityForResult(intent, REQUEST_ADD_DICT);
+            showNewDictFragment();
         }
+    }
+    
+    private void showNewDictFragment() {
+        DialogFragment df = new NewDictDialogFragment();
+        df.show(getSupportFragmentManager(), "New Dict");
+    }
+    
+    private void showDeleteDictFragment() {
+        DialogFragment df = new DeleteDictDialogFragment();
+        df.show(getSupportFragmentManager(), "Delete Dict");
+    }
+
+    @Override
+    public void onNewDictionary(String name) {
+        ContentResolver resolver = getContentResolver();
+        ContentValues values = new ContentValues();
+        values.put(DictColumns.NAME, name);
+        Uri uri = resolver.insert(DataProviderContract.Dict.CONTENT_URI, values);
+        mDictID = ContentUris.parseId(uri);
+        Prefs.setDefaultDict(this, mDictID);
+        init();
     }
     
     @Override
@@ -146,8 +169,10 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 startWordActivity(WordActivity.ID_NONE);
                 return true;
             case R.id.add_dict:
-	            Intent newDictIntent = new Intent(this, NewDictActivity.class);
-	            startActivityForResult(newDictIntent, REQUEST_ADD_DICT);
+                showNewDictFragment();
+	            return true;
+            case R.id.delete_dict:
+                showDeleteDictFragment();
 	            return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -196,7 +221,8 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         }
     }
     
-    class WordAdapter extends CursorAdapter {
+    class WordAdapter extends CursorAdapter implements OnItemClickListener, 
+            OnLongClickListener {
         
         public WordAdapter(Context context) {
             super(context, null, false);
@@ -217,18 +243,19 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
             LayoutInflater inflater = LayoutInflater.from(context);
             return inflater.inflate(android.R.layout.simple_list_item_2, null);
         }
+	
+	    @Override
+	    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+	        final long wordID = (Long)view.getTag();
+	        startWordActivity(wordID);
+	    }
+	
+	    @Override
+	    public boolean onLongClick(View v) {
+	        // TODO
+	        return true;
+	    }
         
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        startWordActivity((Long)view.getTag());
-    }
-
-    @Override
-    public boolean onLongClick(View v) {
-        // TODO
-        return true;
     }
     
     private void startWordActivity(long id) {
@@ -239,6 +266,42 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         extras.putString(Extra.DICT_NAME, mDictName);
         intent.putExtras(extras);
         startActivity(intent);
+    }
+    
+    private void deleteDict() {
+        ContentResolver resolver = getContentResolver();
+        if (resolver.delete(
+                DataProviderContract.Dict.CONTENT_URI, 
+                DictColumns._ID + "= ?", 
+                new String[]{String.valueOf(mDictID)}) == 1) {
+            Toast.makeText(this, "Dict deleted", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
+        }
+        
+    }
+    
+    public static class DeleteDictDialogFragment extends DialogFragment {
+	    @Override
+	    public Dialog onCreateDialog(Bundle savedInstanceState) {
+	        return new AlertDialog.Builder(getActivity())
+	                .setTitle("Delete Dictionary")
+	                .setTitle("Are you sure? All the data will be deleted")
+	                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+	                    @Override
+	                    public void onClick(DialogInterface dialog, int which) {
+	                        // TODO
+	                        ((DictActivity)getActivity()).deleteDict();
+	                        dialog.dismiss();
+	                    }
+	                })
+	                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+	                    @Override
+	                    public void onClick(DialogInterface dialog, int which) {
+	                        dialog.dismiss();
+	                    }
+	                }).create();
+	    }
     }
 
     interface DictQuery {

@@ -68,30 +68,25 @@ public class DataProvider extends ContentProvider{
             
             db.execSQL("CREATE TABLE " + DataProviderContract.Tables.WORD + " ("
                     + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," 
-                    + WordColumns.DICT_ID + " INTEGER NOT NULL "
-                    + "REFERENCES " + Tables.DICTIONARY + "(" + DictColumns._ID + ")"
-                    + " ON UPDATE CASCADE ON DELETE CASCADE,"
+                    + WordColumns.DICT_ID + " INTEGER NOT NULL, "
+                    //+ "REFERENCES " + Tables.DICTIONARY + "(" + DictColumns._ID + ")"
+                    //+ " ON UPDATE CASCADE ON DELETE CASCADE,"
                     + WordColumns.WORD + " TEXT NOT NULL," 
                     + WordColumns.TRANSLATION + " TEXT NOT NULL)");
             
             db.execSQL("CREATE INDEX word_word_idx ON "
                     + Tables.WORD + "(" + WordColumns.WORD + ")" );
+	        
+	        /**
+	         * Until SQLite version 3.6.19 (Android 2.2) there is no support
+	         * for cascading, thus we'll simulate that with triggers
+	         */
+            db.execSQL("CREATE TRIGGER delete_dict_tg AFTER DELETE ON " + Tables.DICTIONARY
+            		+ " FOR EACH ROW BEGIN "
+            		+     "DELETE FROM " + Tables.WORD + " WHERE "
+            		+     WordColumns.DICT_ID + " = OLD." + DictColumns._ID
+            		+ " ;END");
             
-            /*
-	         // Using the "porter" tokenizer for simple stemming, so that
-            // "frustration" matches "frustrated."
-            db.execSQL("CREATE VIRTUAL TABLE " + Tables.TRANSLATION + " USING fts3("
-                    + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                    + TranslationColumns.DICT_ID + " INTEGER NOT NULL "
-                    + "REFERENCES " + Tables.DICTIONARY + "(" + DictColumns._ID + ")"
-                    + " ON UPDATE CASCADE ON DELETE CASCADE,"
-                    + TranslationColumns.WORD + " TEXT NOT NULL," 
-                    + TranslationColumns.TRANSLATION + " TEXT NOT NULL,"
-                    + "UNIQUE (" + TranslationColumns.WORD + ") ON CONFLICT REPLACE,"
-                    + "tokenize=porter)");
-                    */
-
-            // TODO: Create indexes
         }
         
         @Override
@@ -211,6 +206,8 @@ public class DataProvider extends ContentProvider{
         switch (sUriMatcher.match(uri)) {
             case DICT:
                 rows = db.delete(Tables.DICTIONARY, selection, selectionArgs);
+                // Notify related URIs
+                getContext().getContentResolver().notifyChange(Word.CONTENT_URI, null);
                 break;
             case WORD:
                 rows = db.delete(Tables.WORD, selection, selectionArgs);

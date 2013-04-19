@@ -34,10 +34,6 @@
                 android:resource="@xml/searchable" />
         </activity>
         <activity
-            android:name=".activity.NewDictActivity"
-            android:label="@string/new_dict" >
-        </activity>
-        <activity
             android:name="com.ichinaski.todict.activity.WordActivity"
             android:label="@string/new_word" >
         </activity>
