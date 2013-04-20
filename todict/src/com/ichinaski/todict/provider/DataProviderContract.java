@@ -24,6 +24,7 @@ public class DataProviderContract {
         String DICT_ID = "dict_id";
         String WORD = "word";
         String TRANSLATION = "translation";
+        String STAR = "star";
         // String NOTES = "notes";
         // String DATE = "date";
     }

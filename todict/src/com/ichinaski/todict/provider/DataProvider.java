@@ -69,13 +69,19 @@ public class DataProvider extends ContentProvider{
             db.execSQL("CREATE TABLE " + DataProviderContract.Tables.WORD + " ("
                     + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," 
                     + WordColumns.DICT_ID + " INTEGER NOT NULL, "
-                    //+ "REFERENCES " + Tables.DICTIONARY + "(" + DictColumns._ID + ")"
-                    //+ " ON UPDATE CASCADE ON DELETE CASCADE,"
                     + WordColumns.WORD + " TEXT NOT NULL," 
-                    + WordColumns.TRANSLATION + " TEXT NOT NULL)");
+                    + WordColumns.TRANSLATION + " TEXT NOT NULL,"
+                    + WordColumns.STAR + " INTEGER)");
+            
+            db.execSQL("CREATE INDEX word_star_idx ON "
+                    + Tables.WORD + "(" + WordColumns.STAR + ")" );
             
             db.execSQL("CREATE INDEX word_word_idx ON "
                     + Tables.WORD + "(" + WordColumns.WORD + ")" );
+            
+            db.execSQL("CREATE INDEX word_dict_star_idx ON "
+                    + Tables.WORD + "(" + WordColumns.DICT_ID
+                    + "," + WordColumns.STAR +")" );
 	        
 	        /**
 	         * Until SQLite version 3.6.19 (Android 2.2) there is no support
@@ -86,7 +92,6 @@ public class DataProvider extends ContentProvider{
             		+     "DELETE FROM " + Tables.WORD + " WHERE "
             		+     WordColumns.DICT_ID + " = OLD." + DictColumns._ID
             		+ " ;END");
-            
         }
         
         @Override

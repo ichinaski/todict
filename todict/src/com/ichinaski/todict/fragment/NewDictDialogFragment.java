@@ -15,6 +15,7 @@ import android.widget.Toast;
 import com.ichinaski.todict.R;
 
 public class NewDictDialogFragment extends DialogFragment {
+    public static final String TAG = NewDictDialogFragment.class.getSimpleName();
     // Interface to be implemented by the parent Activity
     public interface INewDictionary {
         public void onNewDictionary(String name);
@@ -42,7 +43,7 @@ public class NewDictDialogFragment extends DialogFragment {
 
         return new AlertDialog.Builder(getActivity())
                 .setView(view)
-                .setTitle("New Dictionary")
+                .setTitle(R.string.new_dict)
                 .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

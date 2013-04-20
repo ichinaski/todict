@@ -1,9 +1,24 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/save_translation"
+        android:id="@+id/star_word"
         android:orderInCategory="100"
-        android:showAsAction="always"
+        android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_menu_star"
+        android:title="@string/star"/>
+
+    <item
+        android:id="@+id/delete_word"
+        android:orderInCategory="101"
+        android:showAsAction="never"
+        android:icon="@drawable/ic_menu_delete"
+        android:title="@string/delete"/>
+
+    <item
+        android:id="@+id/save_word"
+        android:orderInCategory="102"
+        android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_menu_save"
         android:title="@string/save"/>
 
 </menu>

@@ -26,6 +26,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -134,12 +135,12 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     
     private void showNewDictFragment() {
         DialogFragment df = new NewDictDialogFragment();
-        df.show(getSupportFragmentManager(), "New Dict");
+        df.show(getSupportFragmentManager(), NewDictDialogFragment.TAG);
     }
     
     private void showDeleteDictFragment() {
         DialogFragment df = new DeleteDictDialogFragment();
-        df.show(getSupportFragmentManager(), "Delete Dict");
+        df.show(getSupportFragmentManager(), DeleteDictDialogFragment.TAG);
     }
 
     @Override
@@ -186,10 +187,14 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 		        return new CursorLoader(this, DataProviderContract.Dict.CONTENT_URI,
 		                DictQuery.PROJECTION, null, null, null);
             case WORD_LOADER:
+                String selection = WordColumns.DICT_ID + " = ?"
+		                /*+ " AND " + WordColumns.STAR + " = ?"*/;
+                String[] selectionArgs = 
+                        new String[]{String.valueOf(mDictID)/*,String.valueOf(1)*/};
 		        return new CursorLoader(this, Word.CONTENT_URI,
 		                WordQuery.PROJECTION, 
-		                WordColumns.DICT_ID + " = ?",
-		                new String[]{String.valueOf(mDictID)},
+		                selection,
+		                selectionArgs,
 		                WordColumns.WORD);
         }
         return null;
@@ -232,16 +237,22 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         public void bindView(View view, Context context, Cursor cursor) {
             TextView word = (TextView)view.findViewById(android.R.id.text1);
             TextView translation = (TextView)view.findViewById(android.R.id.text2);
+            ImageView starView = (ImageView)view.findViewById(R.id.starView);
             
             word.setText(cursor.getString(WordQuery.WORD));
             translation.setText(cursor.getString(WordQuery.TRANSLATION));
+            if (cursor.getInt(WordQuery.STAR) == 0) {
+                starView.setVisibility(View.GONE);
+            } else {
+                starView.setVisibility(View.VISIBLE);
+            }
             view.setTag(cursor.getLong(WordQuery._ID));
         }
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup viewGroup) {
             LayoutInflater inflater = LayoutInflater.from(context);
-            return inflater.inflate(android.R.layout.simple_list_item_2, null);
+            return inflater.inflate(R.layout.word_row, null);
         }
 	
 	    @Override
@@ -274,23 +285,22 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 DataProviderContract.Dict.CONTENT_URI, 
                 DictColumns._ID + "= ?", 
                 new String[]{String.valueOf(mDictID)}) == 1) {
-            Toast.makeText(this, "Dict deleted", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.deleted, Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
         }
-        
     }
     
     public static class DeleteDictDialogFragment extends DialogFragment {
+        public static final String TAG = DeleteDictDialogFragment.class.getSimpleName();
 	    @Override
 	    public Dialog onCreateDialog(Bundle savedInstanceState) {
 	        return new AlertDialog.Builder(getActivity())
-	                .setTitle("Delete Dictionary")
-	                .setTitle("Are you sure? All the data will be deleted")
+	                .setTitle(R.string.delete_dict)
+	                .setMessage(R.string.delete_dict_msg)
 	                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 	                    @Override
 	                    public void onClick(DialogInterface dialog, int which) {
-	                        // TODO
 	                        ((DictActivity)getActivity()).deleteDict();
 	                        dialog.dismiss();
 	                    }
@@ -318,12 +328,14 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         String[] PROJECTION = {
 		        DataProviderContract.WordColumns._ID,
 		        DataProviderContract.WordColumns.WORD,
-		        DataProviderContract.WordColumns.TRANSLATION
+		        DataProviderContract.WordColumns.TRANSLATION,
+		        DataProviderContract.WordColumns.STAR
         };
         
         int _ID = 0;
         int WORD = 1;
         int TRANSLATION = 2;
+        int STAR = 3;
     }
     
 }
