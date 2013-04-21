@@ -34,16 +34,31 @@
                 android:resource="@xml/searchable" />
         </activity>
         <activity
-            android:name="com.ichinaski.todict.activity.WordActivity"
+            android:name=".activity.WordActivity"
             android:label="@string/new_word" >
+        </activity>
+        <activity
+            android:name=".widget.SetupWidgetActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
         </activity>
 
         <provider
-            android:name="com.ichinaski.todict.provider.DataProvider"
+            android:name=".provider.DataProvider"
             android:authorities="com.ichinaski.todict"
             android:label="@string/app_name"
             android:syncable="true"
             android:writePermission="com.ichinaski.todict.permission.WRITE_SCHEDULE" />
+        
+        <receiver android:name="com.ichinaski.todict.widget.WidgetProvider">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                	   android:resource="@xml/widget_provider_info"/>
+        </receiver>
     </application>
 
 </manifest>

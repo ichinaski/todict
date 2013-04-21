@@ -13,12 +13,14 @@
             android:id="@+id/word"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+	        android:inputType="textCapSentences"
             android:hint="@string/word" />
 
         <EditText
             android:id="@+id/translation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+	        android:inputType="textCapSentences"
             android:hint="@string/definition_translation" />
         
     </LinearLayout>
