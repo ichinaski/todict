@@ -49,7 +49,6 @@ import com.ichinaski.todict.util.Prefs;
 
 public class DictActivity extends SherlockFragmentActivity implements LoaderCallbacks<Cursor>, 
         OnNavigationListener, INewDictionary {
-    
     private ListView mListView;
     private WordAdapter mAdapter;
     private ArrayAdapter<String> mNavigationAdapter;
@@ -285,6 +284,10 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 DataProviderContract.Dict.CONTENT_URI, 
                 DictColumns._ID + "= ?", 
                 new String[]{String.valueOf(mDictID)}) == 1) {
+            Prefs.setDefaultDict(this, Prefs.DICT_NONE);
+            mDictID = Prefs.DICT_NONE;
+            mDictName = "";
+            init();
             Toast.makeText(this, R.string.deleted, Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
