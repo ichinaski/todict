@@ -17,6 +17,7 @@
     <!-- <string name="setup_langs">Select your langauges</string>-->
     <string name="dict_name">Dictionary Name</string>
     <string name="new_dict">New Dictionary</string>
+    <string name="edit_dict">Edit Dictionary</string>
     <string name="delete_dict">Delete Dictionary</string>
     <string name="delete_dict_msg">Are you sure? All the data will be removed</string>
     <string name="new_word">New Word</string>

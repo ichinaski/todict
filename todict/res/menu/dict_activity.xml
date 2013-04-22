@@ -21,9 +21,9 @@
         android:title="@string/new_dict"/>
 
     <item
-        android:id="@+id/delete_dict"
+        android:id="@+id/edit_dict"
         android:orderInCategory="102"
         android:showAsAction="never"
-        android:title="Delete Dict"/>
+        android:title="@string/edit_dict"/>
 
 </menu>

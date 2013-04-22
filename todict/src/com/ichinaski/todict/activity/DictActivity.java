@@ -21,7 +21,6 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -38,8 +37,8 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.ichinaski.todict.R;
 import com.ichinaski.todict.dao.Dict;
-import com.ichinaski.todict.fragment.NewDictDialogFragment;
-import com.ichinaski.todict.fragment.NewDictDialogFragment.INewDictionary;
+import com.ichinaski.todict.fragment.EditDictDialogFragment;
+import com.ichinaski.todict.fragment.EditDictDialogFragment.IDictionaryHandler;
 import com.ichinaski.todict.provider.DataProviderContract;
 import com.ichinaski.todict.provider.DataProviderContract.DictColumns;
 import com.ichinaski.todict.provider.DataProviderContract.Word;
@@ -48,7 +47,7 @@ import com.ichinaski.todict.util.Extra;
 import com.ichinaski.todict.util.Prefs;
 
 public class DictActivity extends SherlockFragmentActivity implements LoaderCallbacks<Cursor>, 
-        OnNavigationListener, INewDictionary {
+        OnNavigationListener, IDictionaryHandler {
     private ListView mListView;
     private WordAdapter mAdapter;
     private ArrayAdapter<String> mNavigationAdapter;
@@ -70,7 +69,6 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         mAdapter = new WordAdapter(this);
         mListView.setAdapter(mAdapter);
         mListView.setOnItemClickListener(mAdapter);
-        mListView.setOnLongClickListener(mAdapter);
         
         mDictID = Prefs.getDefaultDict(this);// Default to the cached value
         init();
@@ -128,13 +126,18 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 	        getSupportLoaderManager().restartLoader(DICT_LOADER, null, this);
 	        getSupportLoaderManager().restartLoader(WORD_LOADER, null, this);
         } else {
-            showNewDictFragment();
+            showEditDictFragment(true);
         }
     }
     
-    private void showNewDictFragment() {
-        DialogFragment df = new NewDictDialogFragment();
-        df.show(getSupportFragmentManager(), NewDictDialogFragment.TAG);
+    private void showEditDictFragment(boolean isNew) {
+        DialogFragment fragment = null;
+        if (isNew) {
+            fragment = EditDictDialogFragment.instantiate(Prefs.DICT_NONE, "");
+        } else {
+            fragment = EditDictDialogFragment.instantiate(mDictID, mDictName);
+        }
+        fragment.show(getSupportFragmentManager(), EditDictDialogFragment.TAG);
     }
     
     private void showDeleteDictFragment() {
@@ -143,7 +146,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     }
 
     @Override
-    public void onNewDictionary(String name) {
+    public void newDictionary(String name) {
         ContentResolver resolver = getContentResolver();
         ContentValues values = new ContentValues();
         values.put(DictColumns.NAME, name);
@@ -151,6 +154,40 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         mDictID = ContentUris.parseId(uri);
         Prefs.setDefaultDict(this, mDictID);
         init();
+    }
+
+    @Override
+    public void editDictionary(String name) {
+        ContentResolver resolver = getContentResolver();
+        ContentValues values = new ContentValues();
+        values.put(DictColumns.NAME, name);
+        resolver.update(
+              DataProviderContract.Dict.CONTENT_URI,
+              values,
+              DictColumns._ID + "= ?", 
+              new String[]{String.valueOf(mDictID)});
+    }
+
+    @Override
+    public void deleteDictRequest() {
+        // Not yet... Ask for confirmation first
+        showDeleteDictFragment();
+    }
+    
+    private void deleteDict() {
+        ContentResolver resolver = getContentResolver();
+        if (resolver.delete(
+                DataProviderContract.Dict.CONTENT_URI, 
+                DictColumns._ID + "= ?", 
+                new String[]{String.valueOf(mDictID)}) == 1) {
+            Prefs.setDefaultDict(this, Prefs.DICT_NONE);
+            mDictID = Prefs.DICT_NONE;
+            mDictName = "";
+            init();
+            Toast.makeText(this, R.string.deleted, Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
+        }
     }
     
     @Override
@@ -169,10 +206,10 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 startWordActivity(WordActivity.ID_NONE);
                 return true;
             case R.id.add_dict:
-                showNewDictFragment();
+                showEditDictFragment(true);
 	            return true;
-            case R.id.delete_dict:
-                showDeleteDictFragment();
+            case R.id.edit_dict:
+                showEditDictFragment(false);
 	            return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -225,8 +262,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         }
     }
     
-    class WordAdapter extends CursorAdapter implements OnItemClickListener, 
-            OnLongClickListener {
+    class WordAdapter extends CursorAdapter implements OnItemClickListener {
         
         public WordAdapter(Context context) {
             super(context, null, false);
@@ -259,13 +295,6 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 	        final long wordID = (Long)view.getTag();
 	        startWordActivity(wordID);
 	    }
-	
-	    @Override
-	    public boolean onLongClick(View v) {
-	        // TODO
-	        return true;
-	    }
-        
     }
     
     private void startWordActivity(long id) {
@@ -276,22 +305,6 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         extras.putString(Extra.DICT_NAME, mDictName);
         intent.putExtras(extras);
         startActivity(intent);
-    }
-    
-    private void deleteDict() {
-        ContentResolver resolver = getContentResolver();
-        if (resolver.delete(
-                DataProviderContract.Dict.CONTENT_URI, 
-                DictColumns._ID + "= ?", 
-                new String[]{String.valueOf(mDictID)}) == 1) {
-            Prefs.setDefaultDict(this, Prefs.DICT_NONE);
-            mDictID = Prefs.DICT_NONE;
-            mDictName = "";
-            init();
-            Toast.makeText(this, R.string.deleted, Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
-        }
     }
     
     public static class DeleteDictDialogFragment extends DialogFragment {
