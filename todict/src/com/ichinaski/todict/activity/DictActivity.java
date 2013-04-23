@@ -21,6 +21,7 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -262,7 +263,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         }
     }
     
-    class WordAdapter extends CursorAdapter implements OnItemClickListener {
+    class WordAdapter extends CursorAdapter implements OnItemClickListener, OnClickListener {
         
         public WordAdapter(Context context) {
             super(context, null, false);
@@ -270,17 +271,34 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
+            final long id = cursor.getLong(WordQuery._ID);
+            final int star = cursor.getInt(WordQuery.STAR);
+            
             TextView word = (TextView)view.findViewById(android.R.id.text1);
             TextView translation = (TextView)view.findViewById(android.R.id.text2);
-            ImageView starView = (ImageView)view.findViewById(R.id.starView);
+            final ImageView starView = (ImageView)view.findViewById(R.id.starView);
             
             word.setText(cursor.getString(WordQuery.WORD));
             translation.setText(cursor.getString(WordQuery.TRANSLATION));
             if (cursor.getInt(WordQuery.STAR) == 0) {
-                starView.setVisibility(View.GONE);
+                starView.setImageResource(R.drawable.ic_menu_star);
             } else {
-                starView.setVisibility(View.VISIBLE);
+                starView.setImageResource(R.drawable.rate_star_big_on_holo_light);
             }
+            starView.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int starValue = star == 0 ? 1 : 0;// Just swap the value
+			        ContentResolver resolver = getContentResolver();
+			        ContentValues values = new ContentValues();
+			        values.put(WordColumns.STAR, starValue);
+			        resolver.update(
+			              DataProviderContract.Word.CONTENT_URI,
+			              values,
+			              WordColumns._ID + "= ?", 
+			              new String[]{String.valueOf(id)});
+		                }
+            });
             view.setTag(cursor.getLong(WordQuery._ID));
         }
 
@@ -295,6 +313,11 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 	        final long wordID = (Long)view.getTag();
 	        startWordActivity(wordID);
 	    }
+
+        @Override
+        public void onClick(View v) {
+	        final long wordID = (Long)v.getTag();
+        }
     }
     
     private void startWordActivity(long id) {
