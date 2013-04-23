@@ -263,7 +263,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         }
     }
     
-    class WordAdapter extends CursorAdapter implements OnItemClickListener, OnClickListener {
+    class WordAdapter extends CursorAdapter implements OnItemClickListener {
         
         public WordAdapter(Context context) {
             super(context, null, false);
@@ -313,11 +313,6 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
 	        final long wordID = (Long)view.getTag();
 	        startWordActivity(wordID);
 	    }
-
-        @Override
-        public void onClick(View v) {
-	        final long wordID = (Long)v.getTag();
-        }
     }
     
     private void startWordActivity(long id) {
