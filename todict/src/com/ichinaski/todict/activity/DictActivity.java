@@ -1,3 +1,4 @@
+
 package com.ichinaski.todict.activity;
 
 import java.util.ArrayList;
@@ -47,16 +48,17 @@ import com.ichinaski.todict.provider.DataProviderContract.WordColumns;
 import com.ichinaski.todict.util.Extra;
 import com.ichinaski.todict.util.Prefs;
 
-public class DictActivity extends SherlockFragmentActivity implements LoaderCallbacks<Cursor>, 
+public class DictActivity extends SherlockFragmentActivity implements LoaderCallbacks<Cursor>,
         OnNavigationListener, IDictionaryHandler {
     private ListView mListView;
     private WordAdapter mAdapter;
-    private ArrayAdapter<String> mNavigationAdapter;
     
+    private ArrayAdapter<String> mNavigationAdapter;
     private List<Dict> mDicts;
+
     private long mDictID;
     private String mDictName;
-    
+
     private static final int DICT_LOADER = 0;
     private static final int WORD_LOADER = 1;
 
@@ -64,52 +66,60 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.dict_activity);
-        
+
         mListView = (ListView)findViewById(android.R.id.list);
-        
+
         mAdapter = new WordAdapter(this);
         mListView.setAdapter(mAdapter);
         mListView.setOnItemClickListener(mAdapter);
-        
+
         mDictID = Prefs.getDefaultDict(this);// Default to the cached value
+        mDicts = new ArrayList<Dict>();
         init();
     }
-    
+
     @Override
     protected void onNewIntent(Intent intent) {
         setIntent(intent);
         if (Intent.ACTION_VIEW.equals(intent.getAction())) {
-	        long wordID = Long.parseLong(intent.getDataString());
-	        startWordActivity(wordID);
+            long wordID = Long.parseLong(intent.getDataString());
+            startWordActivity(wordID);
         }
     }
-    
-    private void setupNavigationMode(List<Dict> dicts) {
-        mDicts = dicts;
-        
-        // List navigation mode
+
+    private void setup() {
         final ActionBar actionBar = getSupportActionBar();
         final Context context = actionBar.getThemedContext();
-        actionBar.setDisplayShowTitleEnabled(false);
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
-        
-        String[] names = new String[mDicts.size()];
-        int currentIndex = 0;
-        for (int i=0; i<mDicts.size(); i++) {
-            final Dict dict = mDicts.get(i);
-            names[i] = dict.getName();
-            if (dict.getID() == mDictID) {
-                currentIndex = i;
+
+        mDictID = Prefs.getDefaultDict(this);
+
+        if (mDicts.size() == 0) {
+            // No dictionary available. Prompt new dictionary dialog.
+            actionBar.setDisplayShowTitleEnabled(false);
+            showEditDictFragment(true);
+        } else {
+            // List navigation mode
+            actionBar.setDisplayShowTitleEnabled(false);
+            actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+
+            String[] names = new String[mDicts.size()];
+            int currentIndex = 0;
+            for (int i = 0; i < mDicts.size(); i++) {
+                final Dict dict = mDicts.get(i);
+                names[i] = dict.getName();
+                // Select current dictionary (if any)
+                if (dict.getID() == mDictID) {
+                    currentIndex = i;
+                }
             }
+
+            mNavigationAdapter = new ArrayAdapter<String>(context,
+                    com.actionbarsherlock.R.layout.sherlock_spinner_item, names);
+            mNavigationAdapter
+                    .setDropDownViewResource(com.actionbarsherlock.R.layout.sherlock_spinner_dropdown_item);
+            actionBar.setListNavigationCallbacks(mNavigationAdapter, this);
+            actionBar.setSelectedNavigationItem(currentIndex);
         }
-                
-        mNavigationAdapter = new ArrayAdapter<String>(context, 
-		        com.actionbarsherlock.R.layout.sherlock_spinner_item, 
-		        names);
-        mNavigationAdapter.setDropDownViewResource(
-                com.actionbarsherlock.R.layout.sherlock_spinner_dropdown_item);
-        actionBar.setListNavigationCallbacks(mNavigationAdapter, this);
-        actionBar.setSelectedNavigationItem(currentIndex);
     }
 
     @Override
@@ -121,16 +131,11 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         getSupportLoaderManager().restartLoader(WORD_LOADER, null, this);
         return true;
     }
-    
+
     private void init() {
-        if (mDictID != Prefs.DICT_NONE) {
-	        getSupportLoaderManager().restartLoader(DICT_LOADER, null, this);
-	        getSupportLoaderManager().restartLoader(WORD_LOADER, null, this);
-        } else {
-            showEditDictFragment(true);
-        }
+        getSupportLoaderManager().restartLoader(DICT_LOADER, null, this);
     }
-    
+
     private void showEditDictFragment(boolean isNew) {
         DialogFragment fragment = null;
         if (isNew) {
@@ -140,7 +145,7 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         }
         fragment.show(getSupportFragmentManager(), EditDictDialogFragment.TAG);
     }
-    
+
     private void showDeleteDictFragment() {
         DialogFragment df = new DeleteDictDialogFragment();
         df.show(getSupportFragmentManager(), DeleteDictDialogFragment.TAG);
@@ -162,11 +167,11 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         ContentResolver resolver = getContentResolver();
         ContentValues values = new ContentValues();
         values.put(DictColumns.NAME, name);
-        resolver.update(
-              DataProviderContract.Dict.CONTENT_URI,
-              values,
-              DictColumns._ID + "= ?", 
-              new String[]{String.valueOf(mDictID)});
+        resolver.update(DataProviderContract.Dict.CONTENT_URI, 
+                values, 
+                DictColumns._ID + "= ?",
+                new String[] {String.valueOf(mDictID)}
+        );
     }
 
     @Override
@@ -174,23 +179,21 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         // Not yet... Ask for confirmation first
         showDeleteDictFragment();
     }
-    
+
     private void deleteDict() {
         ContentResolver resolver = getContentResolver();
-        if (resolver.delete(
-                DataProviderContract.Dict.CONTENT_URI, 
-                DictColumns._ID + "= ?", 
-                new String[]{String.valueOf(mDictID)}) == 1) {
+        if (resolver.delete(DataProviderContract.Dict.CONTENT_URI, 
+                DictColumns._ID + "= ?",
+                new String[] {String.valueOf(mDictID)}) == 1) {
             Prefs.setDefaultDict(this, Prefs.DICT_NONE);
             mDictID = Prefs.DICT_NONE;
             mDictName = "";
-            init();
             Toast.makeText(this, R.string.deleted, Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, R.string.error, Toast.LENGTH_SHORT).show();
         }
     }
-    
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getSupportMenuInflater().inflate(R.menu.dict_activity, menu);
@@ -208,10 +211,10 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 return true;
             case R.id.add_dict:
                 showEditDictFragment(true);
-	            return true;
+                return true;
             case R.id.edit_dict:
                 showEditDictFragment(false);
-	            return true;
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -221,18 +224,21 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         switch (id) {
             case DICT_LOADER:
-		        return new CursorLoader(this, DataProviderContract.Dict.CONTENT_URI,
-		                DictQuery.PROJECTION, null, null, null);
+                return new CursorLoader(this, 
+                        DataProviderContract.Dict.CONTENT_URI,
+                        DictQuery.PROJECTION, 
+                        null, null, null);
             case WORD_LOADER:
                 String selection = WordColumns.DICT_ID + " = ?"
-		                /*+ " AND " + WordColumns.STAR + " = ?"*/;
-                String[] selectionArgs = 
-                        new String[]{String.valueOf(mDictID)/*,String.valueOf(1)*/};
-		        return new CursorLoader(this, Word.CONTENT_URI,
-		                WordQuery.PROJECTION, 
-		                selection,
-		                selectionArgs,
-		                WordColumns.WORD);
+                /* + " AND " + WordColumns.STAR + " = ?" */;
+                String[] selectionArgs = new String[] {
+                        String.valueOf(mDictID)/*, String.valueOf(1) */};
+                return new CursorLoader(this, 
+                        Word.CONTENT_URI, 
+                        WordQuery.PROJECTION, 
+                        selection,
+                        selectionArgs, 
+                        WordColumns.WORD);
         }
         return null;
     }
@@ -241,17 +247,16 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         switch (loader.getId()) {
             case DICT_LOADER:
-                List<Dict> dicts = new ArrayList<Dict>();
+                mDicts.clear();
                 while (cursor.moveToNext()) {
-                    Dict dict = new Dict(
-                            cursor.getLong(DictQuery._ID),
-			                cursor.getString(DictQuery.NAME));
-	                dicts.add(dict);
+                    Dict dict = new Dict(cursor.getLong(DictQuery._ID),
+                            cursor.getString(DictQuery.NAME));
+                    mDicts.add(dict);
                 }
-                setupNavigationMode(dicts);
+                setup();
                 break;
             case WORD_LOADER:
-		        mAdapter.changeCursor(cursor);
+                mAdapter.changeCursor(cursor);
                 break;
         }
     }
@@ -259,12 +264,12 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         if (loader.getId() == WORD_LOADER) {
-	        mAdapter.changeCursor(null);
+            mAdapter.changeCursor(null);
         }
     }
-    
+
     class WordAdapter extends CursorAdapter implements OnItemClickListener {
-        
+
         public WordAdapter(Context context) {
             super(context, null, false);
         }
@@ -273,11 +278,11 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         public void bindView(View view, Context context, Cursor cursor) {
             final long id = cursor.getLong(WordQuery._ID);
             final int star = cursor.getInt(WordQuery.STAR);
-            
+
             TextView word = (TextView)view.findViewById(android.R.id.text1);
             TextView translation = (TextView)view.findViewById(android.R.id.text2);
             final ImageView starView = (ImageView)view.findViewById(R.id.starView);
-            
+
             word.setText(cursor.getString(WordQuery.WORD));
             translation.setText(cursor.getString(WordQuery.TRANSLATION));
             if (cursor.getInt(WordQuery.STAR) == 0) {
@@ -289,15 +294,15 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
                 @Override
                 public void onClick(View v) {
                     int starValue = star == 0 ? 1 : 0;// Just swap the value
-			        ContentResolver resolver = getContentResolver();
-			        ContentValues values = new ContentValues();
-			        values.put(WordColumns.STAR, starValue);
-			        resolver.update(
-			              DataProviderContract.Word.CONTENT_URI,
-			              values,
-			              WordColumns._ID + "= ?", 
-			              new String[]{String.valueOf(id)});
-		                }
+                    ContentResolver resolver = getContentResolver();
+                    ContentValues values = new ContentValues();
+                    values.put(WordColumns.STAR, starValue);
+                    resolver.update(DataProviderContract.Word.CONTENT_URI, 
+                            values, 
+                            WordColumns._ID + "= ?", 
+                            new String[] {String.valueOf(id)}
+                    );
+                }
             });
             view.setTag(cursor.getLong(WordQuery._ID));
         }
@@ -307,14 +312,14 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
             LayoutInflater inflater = LayoutInflater.from(context);
             return inflater.inflate(R.layout.word_row, null);
         }
-	
-	    @Override
-	    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-	        final long wordID = (Long)view.getTag();
-	        startWordActivity(wordID);
-	    }
+
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            final long wordID = (Long)view.getTag();
+            startWordActivity(wordID);
+        }
     }
-    
+
     private void startWordActivity(long id) {
         Intent intent = new Intent(this, WordActivity.class);
         Bundle extras = new Bundle();
@@ -324,52 +329,54 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
         intent.putExtras(extras);
         startActivity(intent);
     }
-    
+
     public static class DeleteDictDialogFragment extends DialogFragment {
         public static final String TAG = DeleteDictDialogFragment.class.getSimpleName();
-	    @Override
-	    public Dialog onCreateDialog(Bundle savedInstanceState) {
-	        return new AlertDialog.Builder(getActivity())
-	                .setTitle(R.string.delete_dict)
-	                .setMessage(R.string.delete_dict_msg)
-	                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-	                    @Override
-	                    public void onClick(DialogInterface dialog, int which) {
-	                        ((DictActivity)getActivity()).deleteDict();
-	                        dialog.dismiss();
-	                    }
-	                })
-	                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-	                    @Override
-	                    public void onClick(DialogInterface dialog, int which) {
-	                        dialog.dismiss();
-	                    }
-	                }).create();
-	    }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new AlertDialog.Builder(getActivity())
+                    .setTitle(R.string.delete_dict)
+                    .setMessage(R.string.delete_dict_msg)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            ((DictActivity)getActivity()).deleteDict();
+                            dialog.dismiss();
+                        }
+                    })
+                    .setNegativeButton(android.R.string.cancel,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            }).create();
+        }
     }
 
     interface DictQuery {
         String[] PROJECTION = {
-		        DataProviderContract.DictColumns._ID,
-		        DataProviderContract.DictColumns.NAME
+                DataProviderContract.DictColumns._ID, 
+                DataProviderContract.DictColumns.NAME
         };
-        
+
         int _ID = 0;
         int NAME = 1;
     }
 
     interface WordQuery {
         String[] PROJECTION = {
-		        DataProviderContract.WordColumns._ID,
-		        DataProviderContract.WordColumns.WORD,
-		        DataProviderContract.WordColumns.TRANSLATION,
-		        DataProviderContract.WordColumns.STAR
+                DataProviderContract.WordColumns._ID, 
+                DataProviderContract.WordColumns.WORD,
+                DataProviderContract.WordColumns.TRANSLATION, 
+                DataProviderContract.WordColumns.STAR
         };
-        
+
         int _ID = 0;
         int WORD = 1;
         int TRANSLATION = 2;
         int STAR = 3;
     }
-    
+
 }
