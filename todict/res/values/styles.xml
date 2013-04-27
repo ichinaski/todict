@@ -14,14 +14,7 @@
 
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">
-        <item name="actionBarStyle">@style/abStyle</item>
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
     
-    
-    <style name="abStyle" parent="Widget.Sherlock.ActionBar">
-        <item name="background">@drawable/ab_background</item>
-    </style>
-    
-
 </resources>

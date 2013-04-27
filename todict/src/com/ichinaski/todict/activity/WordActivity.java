@@ -15,7 +15,6 @@ import android.text.TextUtils;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.ichinaski.todict.R;
@@ -24,9 +23,8 @@ import com.ichinaski.todict.provider.DataProviderContract.Word;
 import com.ichinaski.todict.provider.DataProviderContract.WordColumns;
 import com.ichinaski.todict.util.Extra;
 
-public class WordActivity extends SherlockFragmentActivity 
-        implements LoaderCallbacks<Cursor>{
-    public static final long ID_NONE = -1;
+public class WordActivity extends BaseActivity implements LoaderCallbacks<Cursor> {
+    public static final int ID_NONE = -1;
     
     private long mDictID;
     private long mWordID;
@@ -47,7 +45,7 @@ public class WordActivity extends SherlockFragmentActivity
         mTranslationInput = (EditText)findViewById(R.id.translation);
         
         final Bundle extras = getIntent().getExtras();
-        mDictID = extras.getLong(Extra.DICT_ID);
+        mDictID = extras.getLong(Extra.DICT_ID, ID_NONE);
         mWordID = extras.getLong(Extra.WORD_ID, ID_NONE);
         final String dictName = extras.getString(Extra.DICT_NAME);
         setTitle(dictName);
@@ -169,6 +167,7 @@ public class WordActivity extends SherlockFragmentActivity
 	                final String word = cursor.getString(WordQuery.WORD);
 	                final String translation = cursor.getString(WordQuery.TRANSLATION);
 	                final int star = cursor.getInt(WordQuery.STAR);
+                    mDictID = cursor.getInt(WordQuery.DICT_ID);
                     mWordInput.setText(word);
                     mTranslationInput.setText(translation);
                     mStar = star == 0 ? false : true;
@@ -217,15 +216,17 @@ public class WordActivity extends SherlockFragmentActivity
     interface WordQuery {
         String[] PROJECTION = {
 		        DataProviderContract.WordColumns._ID,
+		        DataProviderContract.WordColumns.DICT_ID,
 		        DataProviderContract.WordColumns.WORD,
 		        DataProviderContract.WordColumns.TRANSLATION,
 		        DataProviderContract.WordColumns.STAR,
         };
         
         int _ID = 0;
-        int WORD = 1;
-        int TRANSLATION = 2;
-        int STAR = 3;
+        int DICT_ID = 1;
+        int WORD = 2;
+        int TRANSLATION = 3;
+        int STAR = 4;
     }
     
 }

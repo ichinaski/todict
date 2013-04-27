@@ -1,4 +1,3 @@
-
 package com.ichinaski.todict.activity;
 
 import java.util.ArrayList;
@@ -13,6 +12,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Shader.TileMode;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
@@ -34,7 +35,6 @@ import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.ActionBar.OnNavigationListener;
-import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.ichinaski.todict.R;
@@ -48,7 +48,7 @@ import com.ichinaski.todict.provider.DataProviderContract.WordColumns;
 import com.ichinaski.todict.util.Extra;
 import com.ichinaski.todict.util.Prefs;
 
-public class DictActivity extends SherlockFragmentActivity implements LoaderCallbacks<Cursor>,
+public class DictActivity extends BaseActivity implements LoaderCallbacks<Cursor>,
         OnNavigationListener, IDictionaryHandler {
     private ListView mListView;
     private WordAdapter mAdapter;
@@ -66,6 +66,10 @@ public class DictActivity extends SherlockFragmentActivity implements LoaderCall
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.dict_activity);
+        
+        BitmapDrawable bg = (BitmapDrawable)getResources().getDrawable(R.drawable.binding_dark);
+        bg.setTileModeXY(TileMode.REPEAT, TileMode.REPEAT);
+        getSupportActionBar().setBackgroundDrawable(bg);
 
         mListView = (ListView)findViewById(android.R.id.list);
 
