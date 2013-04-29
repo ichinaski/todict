@@ -167,7 +167,7 @@ public class WordActivity extends BaseActivity implements LoaderCallbacks<Cursor
 	                final String word = cursor.getString(WordQuery.WORD);
 	                final String translation = cursor.getString(WordQuery.TRANSLATION);
 	                final int star = cursor.getInt(WordQuery.STAR);
-                    mDictID = cursor.getInt(WordQuery.DICT_ID);
+                    mDictID = cursor.getInt(WordQuery.DICT_ID);// Ensure dictID
                     mWordInput.setText(word);
                     mTranslationInput.setText(translation);
                     mStar = star == 0 ? false : true;

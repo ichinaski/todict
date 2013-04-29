@@ -1,25 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingLeft="5dp"
-    android:paddingRight="10dp"
-    android:paddingBottom="5dp"
-    android:background="@drawable/word_row">
+    android:padding="10dp" >
 
-    <include
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        layout="@android:layout/simple_list_item_2" />
+        android:background="@drawable/word_row"
+        android:paddingBottom="5dp"
+        android:paddingLeft="5dp"
+        android:paddingRight="10dp" >
 
-    <ImageView
-        android:id="@+id/starView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="5dp"
-        android:layout_gravity="center_vertical"
-        android:adjustViewBounds="true"
-        android:src="@drawable/rate_star_big_on_holo_light" />
+        <include
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            layout="@android:layout/simple_list_item_2" />
 
-</LinearLayout>
+        <ImageView
+            android:id="@+id/starView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:adjustViewBounds="true"
+            android:padding="5dp"
+            android:src="@drawable/rate_star_big_on_holo_light" />
+    </LinearLayout>
+
+</FrameLayout>

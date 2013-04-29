@@ -16,6 +16,7 @@ import android.graphics.Shader.TileMode;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
@@ -58,6 +59,8 @@ public class DictActivity extends BaseActivity implements LoaderCallbacks<Cursor
 
     private long mDictID;
     private String mDictName;
+    
+    private Handler mHandler = new Handler();
 
     private static final int DICT_LOADER = 0;
     private static final int WORD_LOADER = 1;
@@ -140,14 +143,22 @@ public class DictActivity extends BaseActivity implements LoaderCallbacks<Cursor
         getSupportLoaderManager().restartLoader(DICT_LOADER, null, this);
     }
 
-    private void showEditDictFragment(boolean isNew) {
-        DialogFragment fragment = null;
-        if (isNew) {
-            fragment = EditDictDialogFragment.instantiate(Prefs.DICT_NONE, "");
-        } else {
-            fragment = EditDictDialogFragment.instantiate(mDictID, mDictName);
-        }
-        fragment.show(getSupportFragmentManager(), EditDictDialogFragment.TAG);
+    private void showEditDictFragment(final boolean isNew) {
+        // This dialog can be requested after onLoadFInished, thus it cannot
+        // be shown in that point. This is a workaround to avoid the error.
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                DialogFragment fragment = null;
+                if (isNew) {
+                    fragment = EditDictDialogFragment.instantiate(Prefs.DICT_NONE, "");
+                } else {
+                    fragment = EditDictDialogFragment.instantiate(mDictID, mDictName);
+                }
+                fragment.show(getSupportFragmentManager(), EditDictDialogFragment.TAG);
+                
+            }
+        });
     }
 
     private void showDeleteDictFragment() {

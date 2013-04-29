@@ -17,6 +17,7 @@ import com.ichinaski.todict.provider.DataProviderContract.DictColumns;
 import com.ichinaski.todict.provider.DataProviderContract.Tables;
 import com.ichinaski.todict.provider.DataProviderContract.Word;
 import com.ichinaski.todict.provider.DataProviderContract.WordColumns;
+import com.ichinaski.todict.util.Prefs;
 
 public class DataProvider extends ContentProvider{
     private static final String TAG = DataProvider.class.getSimpleName();
@@ -24,6 +25,9 @@ public class DataProvider extends ContentProvider{
     private static final int DICT = 1;
     private static final int WORD = 2;
     private static final int SEARCH_SUGGEST = 3;
+    
+    private static final String SUGGEST_SELECTION = WordColumns.DICT_ID
+            + " = ? AND " + WordColumns.WORD + " LIKE ?";
     
     // Defines a helper object that matches content URIs to table-specific parameters
     private static final UriMatcher sUriMatcher = createUriMatcher();
@@ -76,8 +80,9 @@ public class DataProvider extends ContentProvider{
             db.execSQL("CREATE INDEX word_star_idx ON "
                     + Tables.WORD + "(" + WordColumns.STAR + ")" );
             
-            db.execSQL("CREATE INDEX word_word_idx ON "
-                    + Tables.WORD + "(" + WordColumns.WORD + ")" );
+            db.execSQL("CREATE INDEX word_dict_word_idx ON "
+                    + Tables.WORD + "(" + WordColumns.DICT_ID
+                    + "," + WordColumns.WORD +")" );
             
             db.execSQL("CREATE INDEX word_dict_star_idx ON "
                     + Tables.WORD + "(" + WordColumns.DICT_ID
@@ -131,7 +136,8 @@ public class DataProvider extends ContentProvider{
             case SEARCH_SUGGEST:
                 // Suggestions search
                 // Adjust incoming query to become SQL text match
-                selectionArgs[0] = selectionArgs[0] + "%";
+                final long dictID = Prefs.getDefaultDict(getContext());
+                final String term = selectionArgs[0] + "%";
                 projection = new String[] {
                         BaseColumns._ID,
                         BaseColumns._ID 
@@ -141,8 +147,11 @@ public class DataProvider extends ContentProvider{
                         WordColumns.TRANSLATION 
                         + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_2};
                 cursor = db.query(
-                    DataProviderContract.Tables.WORD, projection,
-                    selection, selectionArgs, null, null, sortOrder);
+                    DataProviderContract.Tables.WORD, 
+                    projection,
+                    SUGGEST_SELECTION, 
+                    new String[]{String.valueOf(dictID), term},
+                    null, null, sortOrder);
                 break;
         }
         

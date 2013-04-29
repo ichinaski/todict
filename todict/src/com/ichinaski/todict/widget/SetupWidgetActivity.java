@@ -12,6 +12,7 @@ import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
@@ -33,8 +34,10 @@ public class SetupWidgetActivity extends SherlockFragmentActivity
         super.onCreate(savedInstanceState);
         setResult(RESULT_CANCELED);
         
-        setContentView(R.layout.dict_activity);// just a list
-        mListView = (ListView)findViewById(android.R.id.list);
+        mListView = new ListView(this);
+        mListView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT));
+        setContentView(mListView);
         
         mAdapter = new DictAdapter(this);
         mListView.setAdapter(mAdapter);
